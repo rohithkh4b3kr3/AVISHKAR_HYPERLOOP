@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "../../public/image.png";
@@ -17,38 +17,38 @@ const orderedLabels = [
   "Contact Us",
 ];
 
-// FIXED: easing arrays removed (Framer Motion v11 does not support number[])
-const menuVariants = {
+// FIXED: Removed backdropFilter from animation (Framer Motion v11 does not allow)
+const menuVariants: Variants = {
   open: {
     opacity: 1,
-    backdropFilter: "blur(14px)",
-    transition: { duration: 0.65, ease: "easeInOut" },
+    transition: { duration: 0.5 }
   },
   closed: {
     opacity: 0,
-    transition: { duration: 0.45, ease: "easeInOut" },
-  },
+    transition: { duration: 0.3 }
+  }
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
   open: {
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.12 }
   },
+  closed: {
+    transition: { staggerChildren: 0.05, staggerDirection: -1 }
+  }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   open: {
     opacity: 1,
     y: 0,
-    skewY: 0,
-    transition: { duration: 0.55, ease: "easeInOut" },
+    transition: { duration: 0.4 }
   },
   closed: {
     opacity: 0,
-    y: 25,
-    skewY: 3,
-    transition: { duration: 0.3, ease: "easeInOut" },
-  },
+    y: 20,
+    transition: { duration: 0.25 }
+  }
 };
 
 export default function Navbar() {
@@ -59,10 +59,9 @@ export default function Navbar() {
     .map((label) => NAV_ITEMS.find((item) => item.label === label))
     .filter(Boolean) as { label: string; href: string }[];
 
-  // FIXED cleanup function
+  // FIXED cleanup return type
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "unset";
-
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -94,9 +93,7 @@ export default function Navbar() {
         <motion.button
           whileTap={{ scale: 1.1 }}
           onClick={() => setOpen((prev) => !prev)}
-          className="w-12 h-12 rounded-md bg-white/5 border border-white/10 
-                     text-3xl text-green-400 hover:text-white hover:border-green-400/40
-                     flex items-center justify-center transition-all duration-300"
+          className="w-12 h-12 rounded-md bg-white/5 border border-white/10 text-3xl text-green-400 hover:text-white hover:border-green-400/40 flex items-center justify-center transition-all duration-300"
         >
           {open ? "✕" : "☰"}
         </motion.button>
@@ -106,7 +103,7 @@ export default function Navbar() {
       <motion.aside
         animate={open ? "open" : "closed"}
         variants={menuVariants}
-        className="fixed top-0 left-0 w-full h-full bg-black/80 z-40 flex justify-center items-center"
+        className="fixed top-0 left-0 w-full h-full bg-black/80 backdrop-blur-xl z-40 flex justify-center items-center"
       >
         <motion.div
           variants={containerVariants}
@@ -122,22 +119,15 @@ export default function Navbar() {
                   setActive(item.label);
                   setOpen(false);
                 }}
-                className={`group uppercase tracking-[0.22em] text-2xl sm:text-3xl md:text-4xl 
-                              transition-all duration-500 relative overflow-visible
-                              ${
-                                active === item.label
-                                  ? "text-white"
-                                  : "text-green-400/80 hover:text-white"
-                              }`}
+                className={`group uppercase tracking-[0.22em] text-2xl sm:text-3xl md:text-4xl transition-all duration-500 relative overflow-visible ${
+                  active === item.label ? "text-white" : "text-green-400/80 hover:text-white"
+                }`}
               >
                 <span className="relative inline-block glitch-text" data-text={item.label}>
                   {item.label}
                 </span>
 
-                <span
-                  className="absolute left-1/2 -bottom-2 w-0 h-[2px] bg-green-500
-                             group-hover:w-full transition-all duration-500 -translate-x-1/2"
-                ></span>
+                <span className="absolute left-1/2 -bottom-2 w-0 h-[2px] bg-green-500 group-hover:w-full transition-all duration-500 -translate-x-1/2"></span>
               </Link>
             </motion.div>
           ))}
