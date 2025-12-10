@@ -6,7 +6,14 @@ import dynamic from "next/dynamic";
 import { Gauge, Weight, Zap } from "lucide-react";
 import { POD_MODELS } from "@/Constants";
 
-const PodModelCanvas = dynamic(() => import("./PodModel"), { ssr: false });
+const PodModelCanvas = dynamic(() => import("./PodModel"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center text-white/70">
+      Loading 3D Model…
+    </div>
+  ),
+});
 
 // -----------------------------
 // TYPES
@@ -31,56 +38,48 @@ interface SectionProps {
   pod: PodItem;
   index: number;
   total: number;
+  isMobile: boolean;
 }
 
 // -----------------------------
-// SIMPLE HOOK: is element in viewport?
+// SAFE useInView
 // -----------------------------
-function useInView(ref: React.RefObject<HTMLElement>, threshold = 0.25) {
+function useInView(ref: React.RefObject<HTMLElement>, threshold = 0.3) {
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setInView(true);
-          }
-        });
-      },
+      ([entry]) => setInView(entry.isIntersecting),
       { threshold }
     );
 
     observer.observe(ref.current);
 
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [ref, threshold]);
 
   return inView;
 }
 
 // -----------------------------
-// MAIN SHOWCASE
+// MAIN COMPONENT
 // -----------------------------
 export default function PodShowcase() {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect viewport size on client
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   return (
-    <div className="bg-[#050505]">
+    <div className="bg-black">
       {POD_MODELS.map((pod, index) => (
-        <HorizontalParallaxSection
+        <HorizontalSection
           key={pod.id}
           pod={pod}
           index={index}
@@ -93,67 +92,51 @@ export default function PodShowcase() {
 }
 
 // -----------------------------
-// HORIZONTAL PARALLAX SECTION
+// SINGLE SECTION
 // -----------------------------
-interface SectionWithMobileProps extends SectionProps {
-  isMobile: boolean;
-}
+function HorizontalSection({ pod, index, total, isMobile }: SectionProps) {
+  const ref = useRef<HTMLDivElement>(null);
 
-function HorizontalParallaxSection({
-  pod,
-  index,
-  total,
-  isMobile,
-}: SectionWithMobileProps) {
-  // const ref = useRef(null);
-  const ref = useRef<HTMLElement>(null as unknown as HTMLElement);
-
-
+  // Framer Scroll Tracking (used only for desktop styling)
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
 
-  // Smooth parallax
-  const modelX = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["-200px", "0px", "80px"]
-  );
-  const textX = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["200px", "0px", "-60px"]
-  );
-  const opacity = useTransform(
-    scrollYProgress,
-    [0, 0.15, 0.85, 1],
-    [0, 1, 1, 0]
-  );
+  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
+  const modelX = useTransform(scrollYProgress, [0, 0.5, 1], ["-120px", "0px", "60px"]);
+  const textX = useTransform(scrollYProgress, [0, 0.5, 1], ["120px", "0px", "-40px"]);
 
-  // Only mount 3D when section enters viewport (desktop only)
-//  const isInView = useInView(ref as React.RefObject<HTMLElement>, { amount: 0.35 });
-const isInView = useInView(ref as React.RefObject<HTMLElement>, 0.35);
+  const isInView = useInView(ref, 0.4);
 
-
+  // Mobile → always show static image
+  // Desktop → show model only when in view
   const show3D = !isMobile && isInView && !!pod.modelUrl;
 
   return (
-    <section ref={ref} className="relative h-[160vh] w-full bg-[#050505]">
+    <section
+      ref={ref}
+      className={`relative w-full bg-black ${
+        isMobile ? "min-h-screen py-24 px-6" : "h-[160vh]"
+      }`}
+    >
       <motion.div
-        style={{ opacity }}
-        className="sticky top-0 h-screen flex items-center justify-center px-6 md:px-20"
+        // On mobile: no parallax opacity, just normal
+        style={isMobile ? undefined : { opacity }}
+        className={`${
+          isMobile ? "h-full" : "sticky top-0 h-screen"
+        } flex items-center justify-center px-0 md:px-20`}
       >
-        {/* Section index */}
-        <div className="absolute top-10 left-6 md:left-10 text-[10px] md:text-xs text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
+        {/* Section Marker */}
+        <div className="absolute top-10 left-6 md:left-10 text-[10px] text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
           POD {index + 1} / {total}
         </div>
 
-        <div className="relative w-full max-w-[1400px] grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
+        <div className="relative w-full max-w-[1400px] grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12 items-center">
           {/* MODEL / IMAGE */}
           <motion.div
-            style={{ x: modelX }}
-            className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl"
+            style={isMobile ? undefined : { x: modelX }}
+            className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-xl"
           >
             {show3D ? (
               <PodModelCanvas url={pod.modelUrl!} />
@@ -168,14 +151,14 @@ const isInView = useInView(ref as React.RefObject<HTMLElement>, 0.35);
 
           {/* TEXT */}
           <motion.div
-            style={{ x: textX }}
-            className="flex flex-col gap-6 md:gap-8"
+            style={isMobile ? undefined : { x: textX }}
+            className="flex flex-col gap-5 md:gap-8"
           >
             <div>
-              <p className="text-green-500 font-tech tracking-[0.4em] text-[10px] md:text-xs uppercase mb-2">
+              <p className="text-green-500 font-tech tracking-[0.4em] text-[10px] uppercase mb-2">
                 Engineering Fleet
               </p>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-white leading-tight">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-tech font-bold text-white leading-tight">
                 {pod.name}
               </h2>
             </div>
@@ -185,29 +168,21 @@ const isInView = useInView(ref as React.RefObject<HTMLElement>, 0.35);
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <Spec
-                title="Max Speed"
-                icon={<Gauge size={18} />}
-                value={pod.stats.maxSpeed}
-              />
-              <Spec
-                title="Weight"
-                icon={<Weight size={18} />}
-                value={pod.stats.weight}
-              />
+              <Spec title="Max Speed" icon={<Gauge size={18} />} value={pod.stats.maxSpeed} />
+              <Spec title="Weight" icon={<Weight size={18} />} value={pod.stats.weight} />
 
-              <div className="col-span-2 bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
+              <div className="col-span-2 bg-white/5 border border-white/10 p-4 rounded-xl">
                 <div className="flex items-center gap-3 text-gray-400 mb-2">
                   <Zap size={18} />
-                  <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
+                  <span className="text-[10px] font-tech tracking-widest uppercase">
                     Propulsion
                   </span>
                 </div>
-                <div className="flex justify-between items-end">
+                <div className="flex justify-between items-end gap-4">
                   <div className="text-lg md:text-2xl text-white font-tech font-bold">
                     {pod.stats.propulsion}
                   </div>
-                  <div className="text-[10px] md:text-xs text-gray-500 tracking-wider uppercase">
+                  <div className="text-[10px] text-gray-500 tracking-wider uppercase text-right">
                     {pod.stats.levitation}
                   </div>
                 </div>
@@ -223,24 +198,22 @@ const isInView = useInView(ref as React.RefObject<HTMLElement>, 0.35);
 // -----------------------------
 // SPEC CARD
 // -----------------------------
-interface SpecProps {
+function Spec({
+  title,
+  icon,
+  value,
+}: {
   title: string;
   icon: React.ReactNode;
   value: string;
-}
-
-function Spec({ title, icon, value }: SpecProps) {
+}) {
   return (
-    <div className="bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
+    <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
       <div className="flex items-center gap-3 text-gray-400 mb-1">
         {icon}
-        <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
-          {title}
-        </span>
+        <span className="text-[10px] font-tech tracking-widest uppercase">{title}</span>
       </div>
-      <div className="text-white font-tech font-bold text-lg md:text-2xl">
-        {value}
-      </div>
+      <div className="text-white font-tech font-bold text-base md:text-2xl">{value}</div>
     </div>
   );
 }
