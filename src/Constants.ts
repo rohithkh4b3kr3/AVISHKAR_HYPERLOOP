@@ -259,69 +259,33 @@ export const LAB_FACILITIES = [
 
 
 // src/Constants.ts
-export type PodId = 'v0' | 'v1' | 'quantum';
-
-export type PodStats = {
-  maxSpeed: string;
-  weight: string;
-  propulsion: string;
-  levitation: string;
-};
-
-export type PodModelConfig = {
-  id: PodId;
-  name: string;
-  modelUrl?: string; // 3D model GLB (under /public/models)
-  image: string; // fallback image (under /public)
-  tagline: string;
-  description: string;
-  stats: PodStats;
-};
-
-export const POD_MODELS: PodModelConfig[] = [
+export const POD_MODELS = [
   {
-    id: 'v0',
-    name: 'V0',
-    modelUrl: '/models/pod-v1.glb',
-    image: '/images/pod-v1.png',
-    tagline: 'FIRST-GEN PLATFORM',
+    id: 1,
+    name: "POD V1",
+    modelUrl: "/models/pod-v1.glb",
+    image: "/images/pod-v1.jpg",
     description:
-      'Our inaugural pod platform built to validate core systems, control architecture, and safety redundancies.',
+      "Our first-generation prototype focusing on aerodynamic stability and low-friction levitation.",
     stats: {
-      maxSpeed: '120 km/h',
-      weight: '180 kg',
-      propulsion: 'Linear Induction Drive',
-      levitation: 'Passive Magnetic Suspension',
+      maxSpeed: "220 km/h",
+      weight: "145 kg",
+      propulsion: "Magnetic Linear Drive",
+      levitation: "Hybrid Air-Cushion System",
     },
   },
   {
-    id: 'v1',
-    name: 'V1',
-    modelUrl: '/models/pod-v2.glb',
-    image: '/images/pod-v1.png',
-    tagline: 'TRACK-READY EVOLUTION',
+    id: 2,
+    name: "POD V2",
+    modelUrl: "/models/pod-v2.glb",
+    image: "/images/pod-v2.jpg",
     description:
-      'A refined, track-ready pod optimized for higher speeds, improved braking, and modular subsystem testing.',
+      "Second-generation prototype with improved structural integrity and optimized aerodynamics.",
     stats: {
-      maxSpeed: '220 km/h',
-      weight: '210 kg',
-      propulsion: 'High-Efficiency Linear Motor',
-      levitation: 'Hybrid Magnetic Suspension',
+      maxSpeed: "310 km/h",
+      weight: "137 kg",
+      propulsion: "Enhanced Linear Motor",
+      levitation: "EML-Based System",
     },
-  },
-  {
-    id: 'quantum',
-    name: 'Quantum',
-    modelUrl: '/models/pod-v3.glb', // or your actual Quantum .glb
-    image: '/images/pod-v1.png',
-    tagline: 'NEXT-GEN CONCEPT',
-    description:
-      'An experimental platform focused on ultra-high-speed stability, redundancy, and real-time diagnostics.',
-    stats: {
-      maxSpeed: '350+ km/h',
-      weight: '230 kg',
-      propulsion: 'Next-Gen Linear Motor',
-      levitation: 'Active Magnetic Control',
-    },
-  },
+  }
 ];

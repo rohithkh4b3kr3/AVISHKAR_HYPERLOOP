@@ -31,43 +31,21 @@ function HorizontalParallaxSection({ pod, index, total }) {
     offset: ["start end", "end start"],
   });
 
-  // -----------------------------
-  // HORIZONTAL SLIDE + PARALLAX
-  // -----------------------------
-  const modelX = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["-300px", "0px", "100px"] // left → center → slight drift right
-  );
-
-  const textX = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["300px", "0px", "-80px"] // right → center → slight drift left
-  );
-
-  const opacity = useTransform(
-    scrollYProgress,
-    [0, 0.15, 0.85, 1],
-    [0, 1, 1, 0]
-  );
+  const modelX = useTransform(scrollYProgress, [0, 0.5, 1], ["-300px", "0px", "100px"]);
+  const textX = useTransform(scrollYProgress, [0, 0.5, 1], ["300px", "0px", "-80px"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
 
   return (
-    <section
-      ref={ref}
-      className="relative h-[180vh] w-full bg-[#050505]"
-    >
+    <section ref={ref} className="relative h-[180vh] w-full bg-[#050505]">
       <motion.div
         style={{ opacity }}
         className="sticky top-0 h-screen flex items-center justify-center px-8 md:px-20"
       >
-        {/* Section index */}
         <div className="absolute top-10 left-10 text-xs text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
           POD {index + 1} / {total}
         </div>
 
         <div className="relative w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* MODEL - moves left ➔ center ➔ right drift */}
           <motion.div
             style={{ x: modelX }}
             className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl"
@@ -79,7 +57,6 @@ function HorizontalParallaxSection({ pod, index, total }) {
             )}
           </motion.div>
 
-          {/* TEXT - moves right ➔ center ➔ left drift */}
           <motion.div style={{ x: textX }} className="flex flex-col gap-8">
             <div>
               <p className="text-green-500 font-tech tracking-[0.4em] text-xs uppercase">
@@ -94,7 +71,6 @@ function HorizontalParallaxSection({ pod, index, total }) {
               {pod.description}
             </p>
 
-            {/* Specs */}
             <div className="grid grid-cols-2 gap-4">
               <Spec title="Max Speed" icon={<Gauge size={18} />} value={pod.stats.maxSpeed} />
               <Spec title="Weight" icon={<Weight size={18} />} value={pod.stats.weight} />
@@ -130,7 +106,9 @@ function Spec({ title, icon, value }) {
         {icon}
         <span className="text-xs font-tech tracking-widest uppercase">{title}</span>
       </div>
-      <div className="text-white font-tech font-bold text-2xl">{value}</div>
+      <div className="text-white font-tech font-bold text-2xl">
+        {value}
+      </div>
     </div>
   );
 }

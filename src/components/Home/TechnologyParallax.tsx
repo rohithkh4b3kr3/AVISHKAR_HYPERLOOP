@@ -161,7 +161,7 @@ function TechSlide({
           {item.title}
         </h2>
 
-        <p className="text-gray-300 text-sm md:text-base leading-relaxed border-l-2 border-white/10 pl-4 py-2 bg-black/30 backdrop-blur-sm">
+        <p className="text-gray-300 text-sm md:text-base leading-relaxed border-l-2 border-white/10 pl-4 py-2  backdrop-blur-sm">
           {item.description}
         </p>
       </div>

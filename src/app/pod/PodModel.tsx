@@ -9,7 +9,21 @@ type PodModelProps = {
 };
 
 function PodMesh({ url }: PodModelProps) {
-  const { scene } = useGLTF(url);
+  let scene: any = null;
+
+  try {
+    scene = useGLTF(url).scene;
+  } catch (e) {
+    console.warn("Model could not be loaded:", url);
+    return (
+      <Html center>
+        <div className="text-white text-xs font-tech tracking-widest uppercase">
+          Model Not Found
+        </div>
+      </Html>
+    );
+  }
+
   return (
     <primitive
       object={scene}
@@ -20,7 +34,7 @@ function PodMesh({ url }: PodModelProps) {
   );
 }
 
-// Preload only models you actually have
+// Preload only existing models
 useGLTF.preload("/models/pod-v1.glb");
 useGLTF.preload("/models/pod-v2.glb");
 
