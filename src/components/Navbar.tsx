@@ -58,9 +58,13 @@ export default function Navbar() {
     .map((label) => NAV_ITEMS.find((item) => item.label === label))
     .filter(Boolean) as { label: string; href: string }[];
 
+  // FIXED TYPE ERROR
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "unset";
-    return () => (document.body.style.overflow = "unset");
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [open]);
 
   return (
