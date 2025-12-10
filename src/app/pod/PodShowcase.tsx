@@ -6,18 +6,13 @@ import dynamic from "next/dynamic";
 import { Gauge, Weight, Zap } from "lucide-react";
 import { POD_MODELS } from "@/Constants";
 
-const PodModelCanvas = dynamic(() => import("./PodModel"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center text-white/70">
-      Loading 3D Model…
-    </div>
-  ),
-});
+// Lazy-load 3D model ONLY on desktop + in-view
+const PodModelCanvas = dynamic(() => import("./PodModel"), { ssr: false });
 
-// -----------------------------
-// TYPES
-// -----------------------------
+/* ============================================================================
+   TYPES
+============================================================================ */
+
 interface PodStats {
   maxSpeed: string;
   weight: string;
@@ -38,48 +33,52 @@ interface SectionProps {
   pod: PodItem;
   index: number;
   total: number;
-  isMobile: boolean;
 }
 
-// -----------------------------
-// SAFE useInView
-// -----------------------------
-function useInView(ref: React.RefObject<HTMLElement>, threshold = 0.3) {
+/* ============================================================================
+   FIXED & SAFE useInView HOOK — 100% Vercel-Compatible
+============================================================================ */
+
+function useInView(ref: React.RefObject<HTMLDivElement>, threshold = 0.25) {
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
-    if (!ref.current) return;
+    const el = ref.current;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
+      (entries) => {
+        if (entries[0].isIntersecting) setInView(true);
+      },
       { threshold }
     );
 
-    observer.observe(ref.current);
-
+    observer.observe(el);
     return () => observer.disconnect();
   }, [ref, threshold]);
 
   return inView;
 }
 
-// -----------------------------
-// MAIN COMPONENT
-// -----------------------------
+/* ============================================================================
+   MAIN SHOWCASE WRAPPER
+============================================================================ */
+
 export default function PodShowcase() {
   const [isMobile, setIsMobile] = useState(false);
 
+  // Detect mobile
   useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   return (
-    <div className="bg-black">
+    <div className="bg-[#050505]">
       {POD_MODELS.map((pod, index) => (
-        <HorizontalSection
+        <HorizontalParallaxSection
           key={pod.id}
           pod={pod}
           index={index}
@@ -91,52 +90,56 @@ export default function PodShowcase() {
   );
 }
 
-// -----------------------------
-// SINGLE SECTION
-// -----------------------------
-function HorizontalSection({ pod, index, total, isMobile }: SectionProps) {
-  const ref = useRef<HTMLDivElement>(null);
+/* ============================================================================
+   SECTION COMPONENT
+============================================================================ */
 
-  // Framer Scroll Tracking (used only for desktop styling)
+interface SectionWithMobileProps extends SectionProps {
+  isMobile: boolean;
+}
+
+function HorizontalParallaxSection({
+  pod,
+  index,
+  total,
+  isMobile,
+}: SectionWithMobileProps) {
+  // FIXED ref (null! avoids TS errors)
+  const ref = useRef<HTMLDivElement>(null!);
+
+  // Scroll animations
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
 
-  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
-  const modelX = useTransform(scrollYProgress, [0, 0.5, 1], ["-120px", "0px", "60px"]);
-  const textX = useTransform(scrollYProgress, [0, 0.5, 1], ["120px", "0px", "-40px"]);
+  const modelX = useTransform(scrollYProgress, [0, 0.5, 1], ["-160px", "0px", "60px"]);
+  const textX = useTransform(scrollYProgress, [0, 0.5, 1], ["160px", "0px", "-40px"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.9, 1], [0, 1, 1, 0]);
 
-  const isInView = useInView(ref, 0.4);
-
-  // Mobile → always show static image
-  // Desktop → show model only when in view
+  // Only load 3D when section is visible
+  const isInView = useInView(ref, 0.35);
   const show3D = !isMobile && isInView && !!pod.modelUrl;
 
   return (
     <section
       ref={ref}
-      className={`relative w-full bg-black ${
-        isMobile ? "min-h-screen py-24 px-6" : "h-[160vh]"
-      }`}
+      className="relative h-[160vh] w-full bg-[#050505] overflow-hidden"
     >
       <motion.div
-        // On mobile: no parallax opacity, just normal
-        style={isMobile ? undefined : { opacity }}
-        className={`${
-          isMobile ? "h-full" : "sticky top-0 h-screen"
-        } flex items-center justify-center px-0 md:px-20`}
+        style={{ opacity }}
+        className="sticky top-0 h-screen flex items-center justify-center px-6 md:px-16"
       >
-        {/* Section Marker */}
-        <div className="absolute top-10 left-6 md:left-10 text-[10px] text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
+        {/* Section Label */}
+        <div className="absolute top-10 left-6 md:left-10 text-[10px] md:text-xs text-gray-500 font-tech tracking-[0.4em] uppercase">
           POD {index + 1} / {total}
         </div>
 
-        <div className="relative w-full max-w-[1400px] grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12 items-center">
-          {/* MODEL / IMAGE */}
+        <div className="relative w-full max-w-[1400px] grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
+          {/* LEFT SIDE — Model / Image */}
           <motion.div
-            style={isMobile ? undefined : { x: modelX }}
-            className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-xl"
+            style={{ x: modelX }}
+            className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl"
           >
             {show3D ? (
               <PodModelCanvas url={pod.modelUrl!} />
@@ -149,16 +152,16 @@ function HorizontalSection({ pod, index, total, isMobile }: SectionProps) {
             )}
           </motion.div>
 
-          {/* TEXT */}
+          {/* RIGHT SIDE — TEXT */}
           <motion.div
-            style={isMobile ? undefined : { x: textX }}
-            className="flex flex-col gap-5 md:gap-8"
+            style={{ x: textX }}
+            className="flex flex-col gap-6 md:gap-8"
           >
             <div>
-              <p className="text-green-500 font-tech tracking-[0.4em] text-[10px] uppercase mb-2">
+              <p className="text-green-500 font-tech tracking-[0.4em] text-[10px] md:text-xs uppercase mb-1">
                 Engineering Fleet
               </p>
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-tech font-bold text-white leading-tight">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-white leading-tight">
                 {pod.name}
               </h2>
             </div>
@@ -171,18 +174,18 @@ function HorizontalSection({ pod, index, total, isMobile }: SectionProps) {
               <Spec title="Max Speed" icon={<Gauge size={18} />} value={pod.stats.maxSpeed} />
               <Spec title="Weight" icon={<Weight size={18} />} value={pod.stats.weight} />
 
-              <div className="col-span-2 bg-white/5 border border-white/10 p-4 rounded-xl">
+              <div className="col-span-2 bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
                 <div className="flex items-center gap-3 text-gray-400 mb-2">
                   <Zap size={18} />
-                  <span className="text-[10px] font-tech tracking-widest uppercase">
+                  <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
                     Propulsion
                   </span>
                 </div>
-                <div className="flex justify-between items-end gap-4">
-                  <div className="text-lg md:text-2xl text-white font-tech font-bold">
+                <div className="flex justify-between items-center">
+                  <div className="text-lg md:text-2xl font-tech font-bold text-white">
                     {pod.stats.propulsion}
                   </div>
-                  <div className="text-[10px] text-gray-500 tracking-wider uppercase text-right">
+                  <div className="text-[10px] md:text-xs text-gray-500 tracking-wide uppercase">
                     {pod.stats.levitation}
                   </div>
                 </div>
@@ -195,9 +198,10 @@ function HorizontalSection({ pod, index, total, isMobile }: SectionProps) {
   );
 }
 
-// -----------------------------
-// SPEC CARD
-// -----------------------------
+/* ============================================================================
+   SPEC COMPONENT
+============================================================================ */
+
 function Spec({
   title,
   icon,
@@ -208,12 +212,16 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+    <div className="bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
       <div className="flex items-center gap-3 text-gray-400 mb-1">
         {icon}
-        <span className="text-[10px] font-tech tracking-widest uppercase">{title}</span>
+        <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
+          {title}
+        </span>
       </div>
-      <div className="text-white font-tech font-bold text-base md:text-2xl">{value}</div>
+      <div className="text-white font-tech font-bold text-lg md:text-2xl">
+        {value}
+      </div>
     </div>
   );
 }
