@@ -17,11 +17,12 @@ const orderedLabels = [
   "Contact Us",
 ];
 
+// FIXED: easing arrays removed (Framer Motion v11 does not support number[])
 const menuVariants = {
   open: {
     opacity: 1,
     backdropFilter: "blur(14px)",
-    transition: { duration: 0.65, ease: [0.25, 1, 0.3, 1] },
+    transition: { duration: 0.65, ease: "easeInOut" },
   },
   closed: {
     opacity: 0,
@@ -40,7 +41,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     skewY: 0,
-    transition: { duration: 0.55, ease: [0.25, 1, 0.3, 1] },
+    transition: { duration: 0.55, ease: "easeInOut" },
   },
   closed: {
     opacity: 0,
@@ -58,7 +59,7 @@ export default function Navbar() {
     .map((label) => NAV_ITEMS.find((item) => item.label === label))
     .filter(Boolean) as { label: string; href: string }[];
 
-  // FIXED TYPE ERROR
+  // FIXED cleanup function
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "unset";
 
@@ -133,7 +134,6 @@ export default function Navbar() {
                   {item.label}
                 </span>
 
-                {/* Underline highlight */}
                 <span
                   className="absolute left-1/2 -bottom-2 w-0 h-[2px] bg-green-500
                              group-hover:w-full transition-all duration-500 -translate-x-1/2"
