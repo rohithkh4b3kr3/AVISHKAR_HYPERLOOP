@@ -105,7 +105,9 @@ function HorizontalParallaxSection({
   total,
   isMobile,
 }: SectionWithMobileProps) {
-  const ref = useRef(null);
+  // const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null as unknown as HTMLElement);
+
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -130,8 +132,7 @@ function HorizontalParallaxSection({
   );
 
   // Only mount 3D when section enters viewport (desktop only)
-  // const isInView = useInView(ref, 0.35);
-  const isInView = useInView(ref, { amount: 0.35 });
+ const isInView = useInView(ref as React.RefObject<HTMLElement>, { amount: 0.35 });
 
   const show3D = !isMobile && isInView && !!pod.modelUrl;
 
