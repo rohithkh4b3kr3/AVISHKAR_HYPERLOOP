@@ -9,42 +9,34 @@ type PodModelProps = {
 };
 
 function PodMesh({ url }: PodModelProps) {
-  let scene: any = null;
-
-  try {
-    scene = useGLTF(url).scene;
-  } catch (e) {
-    console.warn("Model could not be loaded:", url);
-    return (
-      <Html center>
-        <div className="text-white text-xs font-tech tracking-widest uppercase">
-          Model Not Found
-        </div>
-      </Html>
-    );
-  }
+  const { scene } = useGLTF(url);
 
   return (
     <primitive
       object={scene}
       scale={0.9}
       position={[0, -0.6, 0]}
-      rotation={[0, Math.PI / 8, 0]}
+      rotation={[0, Math.PI / 10, 0]} // slightly more tilt for drama
     />
   );
 }
 
-// Preload only existing models
+// Preload only existing models (desktop only usage)
 useGLTF.preload("/models/pod-v1.glb");
 useGLTF.preload("/models/pod-v2.glb");
 
 export default function PodModelCanvas({ url }: PodModelProps) {
   return (
-    <Canvas key={url} camera={{ position: [0, 1.2, 3.2], fov: 45 }}>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 5, 2]} intensity={1.0} />
-      <directionalLight position={[-2, 3, -3]} intensity={0.5} />
+    <Canvas
+      key={url}
+      camera={{ position: [0, 1.2, 3.2], fov: 45 }}
+      dpr={[1, 1.6]} // cap DPR for performance
+    >
+      {/* Lights – kept minimal for performance */}
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[3, 5, 2]} intensity={0.9} />
 
+      {/* Lazy loading state */}
       <React.Suspense
         fallback={
           <Html center>
@@ -59,11 +51,9 @@ export default function PodModelCanvas({ url }: PodModelProps) {
 
       <OrbitControls
         enablePan={false}
-        enableZoom
-        minDistance={2}
-        maxDistance={6}
+        enableZoom={false} // disable zoom to reduce input / CPU
         autoRotate
-        autoRotateSpeed={1.2}
+        autoRotateSpeed={0.8}
       />
     </Canvas>
   );

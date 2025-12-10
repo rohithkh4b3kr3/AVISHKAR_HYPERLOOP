@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import dynamic from "next/dynamic";
 import { Gauge, Weight, Zap } from "lucide-react";
@@ -9,7 +9,7 @@ import { POD_MODELS } from "@/Constants";
 const PodModelCanvas = dynamic(() => import("./PodModel"), { ssr: false });
 
 // -----------------------------
-// TYPE DEFINITIONS
+// TYPES
 // -----------------------------
 interface PodStats {
   maxSpeed: string;
@@ -34,9 +34,49 @@ interface SectionProps {
 }
 
 // -----------------------------
-// MAIN SHOWCASE COMPONENT
+// SIMPLE HOOK: is element in viewport?
+// -----------------------------
+function useInView(ref: React.RefObject<HTMLElement>, threshold = 0.25) {
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setInView(true);
+          }
+        });
+      },
+      { threshold }
+    );
+
+    observer.observe(ref.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref, threshold]);
+
+  return inView;
+}
+
+// -----------------------------
+// MAIN SHOWCASE
 // -----------------------------
 export default function PodShowcase() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect viewport size on client
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <div className="bg-[#050505]">
       {POD_MODELS.map((pod, index) => (
@@ -45,6 +85,7 @@ export default function PodShowcase() {
           pod={pod}
           index={index}
           total={POD_MODELS.length}
+          isMobile={isMobile}
         />
       ))}
     </div>
@@ -52,9 +93,18 @@ export default function PodShowcase() {
 }
 
 // -----------------------------
-// HORIZONTAL SCROLL SECTION
+// HORIZONTAL PARALLAX SECTION
 // -----------------------------
-function HorizontalParallaxSection({ pod, index, total }: SectionProps) {
+interface SectionWithMobileProps extends SectionProps {
+  isMobile: boolean;
+}
+
+function HorizontalParallaxSection({
+  pod,
+  index,
+  total,
+  isMobile,
+}: SectionWithMobileProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -62,62 +112,97 @@ function HorizontalParallaxSection({ pod, index, total }: SectionProps) {
     offset: ["start end", "end start"],
   });
 
-  const modelX = useTransform(scrollYProgress, [0, 0.5, 1], ["-300px", "0px", "100px"]);
-  const textX = useTransform(scrollYProgress, [0, 0.5, 1], ["300px", "0px", "-80px"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
+  // Smooth parallax
+  const modelX = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    ["-200px", "0px", "80px"]
+  );
+  const textX = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    ["200px", "0px", "-60px"]
+  );
+  const opacity = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.85, 1],
+    [0, 1, 1, 0]
+  );
+
+  // Only mount 3D when section enters viewport (desktop only)
+  const isInView = useInView(ref, 0.35);
+  const show3D = !isMobile && isInView && !!pod.modelUrl;
 
   return (
-    <section ref={ref} className="relative h-[180vh] w-full bg-[#050505]">
+    <section ref={ref} className="relative h-[160vh] w-full bg-[#050505]">
       <motion.div
         style={{ opacity }}
-        className="sticky top-0 h-screen flex items-center justify-center px-8 md:px-20"
+        className="sticky top-0 h-screen flex items-center justify-center px-6 md:px-20"
       >
-        <div className="absolute top-10 left-10 text-xs text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
+        {/* Section index */}
+        <div className="absolute top-10 left-6 md:left-10 text-[10px] md:text-xs text-gray-500 font-tech tracking-[0.4em] uppercase pointer-events-none">
           POD {index + 1} / {total}
         </div>
 
-        <div className="relative w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="relative w-full max-w-[1400px] grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
+          {/* MODEL / IMAGE */}
           <motion.div
             style={{ x: modelX }}
             className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-white/10 bg-black shadow-2xl"
           >
-            {pod.modelUrl ? (
-              <PodModelCanvas url={pod.modelUrl} />
+            {show3D ? (
+              <PodModelCanvas url={pod.modelUrl!} />
             ) : (
-              <img src={pod.image!} className="w-full h-full object-cover" />
+              <img
+                src={pod.image || "/fallback-pod.jpg"}
+                className="w-full h-full object-cover"
+                alt={pod.name}
+              />
             )}
           </motion.div>
 
-          <motion.div style={{ x: textX }} className="flex flex-col gap-8">
+          {/* TEXT */}
+          <motion.div
+            style={{ x: textX }}
+            className="flex flex-col gap-6 md:gap-8"
+          >
             <div>
-              <p className="text-green-500 font-tech tracking-[0.4em] text-xs uppercase">
+              <p className="text-green-500 font-tech tracking-[0.4em] text-[10px] md:text-xs uppercase mb-2">
                 Engineering Fleet
               </p>
-              <h2 className="text-5xl md:text-7xl font-tech font-bold text-white leading-tight">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-tech font-bold text-white leading-tight">
                 {pod.name}
               </h2>
             </div>
 
-            <p className="text-gray-400 text-lg leading-relaxed max-w-xl">
+            <p className="text-gray-400 text-sm md:text-lg leading-relaxed max-w-xl">
               {pod.description}
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <Spec title="Max Speed" icon={<Gauge size={18} />} value={pod.stats.maxSpeed} />
-              <Spec title="Weight" icon={<Weight size={18} />} value={pod.stats.weight} />
+              <Spec
+                title="Max Speed"
+                icon={<Gauge size={18} />}
+                value={pod.stats.maxSpeed}
+              />
+              <Spec
+                title="Weight"
+                icon={<Weight size={18} />}
+                value={pod.stats.weight}
+              />
 
-              <div className="col-span-2 bg-white/5 border border-white/10 p-5 rounded-xl">
+              <div className="col-span-2 bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
                 <div className="flex items-center gap-3 text-gray-400 mb-2">
                   <Zap size={18} />
-                  <span className="text-xs font-tech tracking-widest uppercase">
+                  <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
                     Propulsion
                   </span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div className="text-xl md:text-2xl text-white font-tech font-bold">
+                  <div className="text-lg md:text-2xl text-white font-tech font-bold">
                     {pod.stats.propulsion}
                   </div>
-                  <div className="text-xs text-gray-500 tracking-wider uppercase">
+                  <div className="text-[10px] md:text-xs text-gray-500 tracking-wider uppercase">
                     {pod.stats.levitation}
                   </div>
                 </div>
@@ -131,7 +216,7 @@ function HorizontalParallaxSection({ pod, index, total }: SectionProps) {
 }
 
 // -----------------------------
-// SPEC COMPONENT
+// SPEC CARD
 // -----------------------------
 interface SpecProps {
   title: string;
@@ -141,12 +226,16 @@ interface SpecProps {
 
 function Spec({ title, icon, value }: SpecProps) {
   return (
-    <div className="bg-white/5 border border-white/10 p-5 rounded-xl">
+    <div className="bg-white/5 border border-white/10 p-4 md:p-5 rounded-xl">
       <div className="flex items-center gap-3 text-gray-400 mb-1">
         {icon}
-        <span className="text-xs font-tech tracking-widest uppercase">{title}</span>
+        <span className="text-[10px] md:text-xs font-tech tracking-widest uppercase">
+          {title}
+        </span>
       </div>
-      <div className="text-white font-tech font-bold text-2xl">{value}</div>
+      <div className="text-white font-tech font-bold text-lg md:text-2xl">
+        {value}
+      </div>
     </div>
   );
 }
