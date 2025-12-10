@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+/* Theme variables */
+:root {
+  --background: #050505;
+  --foreground: #ffffff;
+
+  --font-body: 'Inter', sans-serif;
+  --font-tech: 'Rajdhani', sans-serif;
+
+  --scrollbar-track: #000;
+  --scrollbar-thumb: #333;
+  --scrollbar-thumb-hover: #22c55e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: var(--font-body);
+  --font-tech: var(--font-tech);
+}
+
+/* Optional dark mode override (same as default in your case) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #050505;
+    --foreground: #ffffff;
+  }
+}
+
+/* Base styles */
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Rajdhani headings */
+h1,
+h2,
+h3,
+h4,
+.font-tech {
+  font-family: var(--font-tech);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Hide default cursor on desktops */
+@media (hover: hover) and (pointer: fine) {
+
+  body,
+  a,
+  button,
+  input,
+  textarea {
+    cursor: none !important;
+  }
+}
+
+
+.font-tech {
+  font-family: "Orbitron", system-ui, sans-serif;
+}
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitch-text::before {
+  color: #22c55e;
+  transform: translate(2px, 0);
+}
+
+.glitch-text::after {
+  color: #00ffff;
+  transform: translate(-2px, 0);
+}
+
+.group:hover .glitch-text::before {
+  animation: glitchTop 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.group:hover .glitch-text::after {
+  animation: glitchBottom 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes glitchTop {
+  0% { opacity: 1; transform: translate(0px, 0px); }
+  25% { opacity: 0.5; transform: translate(-3px, -2px); }
+  50% { opacity: 1; transform: translate(3px, 2px); }
+  100% { opacity: 0; transform: translate(0px, 0px); }
+}
+
+@keyframes glitchBottom {
+  0% { opacity: 1; transform: translate(0px, 0px); }
+  25% { opacity: 0.5; transform: translate(3px, 2px); }
+  50% { opacity: 1; transform: translate(-3px, -2px); }
+  100% { opacity: 0; transform: translate(0px, 0px); }
+}
+
