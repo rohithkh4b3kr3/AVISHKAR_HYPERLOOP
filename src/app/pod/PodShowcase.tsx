@@ -132,7 +132,9 @@ function HorizontalParallaxSection({
   );
 
   // Only mount 3D when section enters viewport (desktop only)
- const isInView = useInView(ref as React.RefObject<HTMLElement>, { amount: 0.35 });
+//  const isInView = useInView(ref as React.RefObject<HTMLElement>, { amount: 0.35 });
+const isInView = useInView(ref as React.RefObject<HTMLElement>, 0.35);
+
 
   const show3D = !isMobile && isInView && !!pod.modelUrl;
 
