@@ -76,7 +76,7 @@ function PodModel() {
     ref.current.rotation.x = 0;
   });
 
-  return <primitive ref={ref} object={scene} scale={0.7} />;
+  return <primitive ref={ref} object={scene} scale={0.3} />;
 }
 
 useGLTF.preload("/models/pod-v2.glb");
