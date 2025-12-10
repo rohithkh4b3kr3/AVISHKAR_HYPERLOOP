@@ -8,6 +8,34 @@ import { POD_MODELS } from "@/Constants";
 
 const PodModelCanvas = dynamic(() => import("./PodModel"), { ssr: false });
 
+// -----------------------------
+// TYPE DEFINITIONS
+// -----------------------------
+interface PodStats {
+  maxSpeed: string;
+  weight: string;
+  propulsion: string;
+  levitation: string;
+}
+
+interface PodItem {
+  id: number;
+  name: string;
+  modelUrl?: string;
+  image?: string;
+  description: string;
+  stats: PodStats;
+}
+
+interface SectionProps {
+  pod: PodItem;
+  index: number;
+  total: number;
+}
+
+// -----------------------------
+// MAIN SHOWCASE COMPONENT
+// -----------------------------
 export default function PodShowcase() {
   return (
     <div className="bg-[#050505]">
@@ -23,7 +51,10 @@ export default function PodShowcase() {
   );
 }
 
-function HorizontalParallaxSection({ pod, index, total }) {
+// -----------------------------
+// HORIZONTAL SCROLL SECTION
+// -----------------------------
+function HorizontalParallaxSection({ pod, index, total }: SectionProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -53,7 +84,7 @@ function HorizontalParallaxSection({ pod, index, total }) {
             {pod.modelUrl ? (
               <PodModelCanvas url={pod.modelUrl} />
             ) : (
-              <img src={pod.image} className="w-full h-full object-cover" />
+              <img src={pod.image!} className="w-full h-full object-cover" />
             )}
           </motion.div>
 
@@ -99,16 +130,23 @@ function HorizontalParallaxSection({ pod, index, total }) {
   );
 }
 
-function Spec({ title, icon, value }) {
+// -----------------------------
+// SPEC COMPONENT
+// -----------------------------
+interface SpecProps {
+  title: string;
+  icon: React.ReactNode;
+  value: string;
+}
+
+function Spec({ title, icon, value }: SpecProps) {
   return (
     <div className="bg-white/5 border border-white/10 p-5 rounded-xl">
       <div className="flex items-center gap-3 text-gray-400 mb-1">
         {icon}
         <span className="text-xs font-tech tracking-widest uppercase">{title}</span>
       </div>
-      <div className="text-white font-tech font-bold text-2xl">
-        {value}
-      </div>
+      <div className="text-white font-tech font-bold text-2xl">{value}</div>
     </div>
   );
 }
